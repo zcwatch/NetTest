@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
@@ -15,6 +16,9 @@ import android.widget.TextView;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends Activity {
     private static final String TAG = "NetworkTest";
@@ -52,8 +56,9 @@ public class MainActivity extends Activity {
 
         serverNames = getResources().getStringArray(R.array.server_names);
         serverValues = getResources().getStringArray(R.array.server_values);
-        Spinner spinner = (Spinner) findViewById(R.id.spinner);
         NameAdapter adapter = new NameAdapter(this, serverNames, serverValues);
+
+        Spinner spinner = (Spinner) findViewById(R.id.spinner);
         spinner.setAdapter(adapter);
 
         spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -64,6 +69,33 @@ public class MainActivity extends Activity {
                 int k = server.indexOf(':');
                 socketIP.setText(server.substring(0, k));
                 socketPort.setText(server.substring(k+1));
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> adapterView) {
+
+            }
+        });
+
+        final List<NameAddress> listPeople = new ArrayList<NameAddress>();
+        listPeople.add(new NameAddress("张三", "上海 "));
+        listPeople.add(new NameAddress("李四", "上海 "));
+        listPeople.add(new NameAddress("王五", "北京" ));
+        listPeople.add(new NameAddress("赵六", "广州 "));
+        NameAdapter adapter2 = new NameAdapter(this, listPeople);
+
+        //ArrayAdapter<String> adapter3=new ArrayAdapter<String>(this,android.R.layout.simple_spinner_item, serverValues);
+        //adapter3.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        Spinner spinner2 = (Spinner) findViewById(R.id.spinner2);
+        spinner2.setAdapter(adapter2);
+
+        spinner2.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
+                NameAddress people = listPeople.get(i);
+                textDebug.setText(people.getName()+" at "+people.getAddress());
+                //textDebug.setText(serverValues[i]);
             }
 
             @Override
@@ -105,6 +137,7 @@ public class MainActivity extends Activity {
 
                 try {
                     socket = new Socket(ip, port);
+                    socket.setSoTimeout(30*1000);
                     Log.e(TAG, "建立连接：" + socket);
                     result = server+"连接成功！";
                 } catch (UnknownHostException e) {

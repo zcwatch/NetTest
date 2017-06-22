@@ -13,15 +13,16 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-/**
- * 自定义适配器类
- * @author jiangqq  <a href=http://blog.csdn.net/jiangqq781931404></a>
- *
- */
 public class NameAdapter extends BaseAdapter {
     private String[] mNames;
     private String[] mValues;
     private Context mContext;
+    private List<NameAddress> mList;
+
+    public NameAdapter(Context pContext, List<NameAddress> pList) {
+        this.mContext = pContext;
+        this.mList = pList;
+    }
 
     public NameAdapter(Context pContext, String[] pNames, String[] pValues) {
         this.mContext = pContext;
@@ -31,12 +32,19 @@ public class NameAdapter extends BaseAdapter {
 
     @Override
     public int getCount() {
-        return mNames.length;
+        if (mList!=null)
+            return mList.size();
+        else
+            return mNames.length;
+
     }
 
     @Override
     public Object getItem(int position) {
-        return mValues[position];
+        if (mList!=null)
+            return mList.get(position);
+        else
+            return mValues[position];
     }
 
     @Override
@@ -51,9 +59,15 @@ public class NameAdapter extends BaseAdapter {
         if(convertView!=null) {
             TextView view1=(TextView)convertView.findViewById(R.id.textView1);
             TextView view2=(TextView)convertView.findViewById(R.id.textView2);
-            view1.setText(mNames[pos]);
-            view2.setText(mValues[pos]);
+            if (mList!=null) {
+                view1.setText(mList.get(pos).getName());
+                view2.setText(mList.get(pos).getAddress());
+            } else {
+                view1.setText(mNames[pos]);
+                view2.setText(mValues[pos]);
+            }
         }
         return convertView;
     }
+
 }
