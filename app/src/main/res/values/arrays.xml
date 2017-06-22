@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="server_values">
+        <item>10.201.78.74:6002</item>
+        <item>10.201.78.74:1002</item>
+        <item>127.0.0.1:8888</item>
+        <item>127.0.0.1:8889</item>
+        <item>127.0.0.1:55555</item>
+        <item>127.0.0.1:55556</item>
+        <item>183.232.231.172:80</item>
+    </string-array>
+    <string-array name="server_names">
+        <item>Hainan1</item>
+        <item>Hainan2</item>
+        <item>Local1</item>
+        <item>Local2</item>
+        <item>Local3</item>
+        <item>Local4</item>
+        <item>Baidu</item>
+    </string-array>
+</resources>
