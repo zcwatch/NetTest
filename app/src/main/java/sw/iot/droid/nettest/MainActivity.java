@@ -1,6 +1,12 @@
 package sw.iot.droid.nettest;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Bundle;
@@ -14,10 +20,15 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import java.io.IOException;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 
 public class MainActivity extends Activity {
@@ -29,6 +40,7 @@ public class MainActivity extends Activity {
     private Button buttonSend;
     private String[] serverNames;
     private String[] serverValues;
+    private TextView textIP;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +50,7 @@ public class MainActivity extends Activity {
         socketPort = (EditText) findViewById(R.id.editPort);
         textResult = (TextView) findViewById(R.id.textResult);
         textDebug = (TextView) findViewById(R.id.textDebug);
+        textIP = (TextView) findViewById(R.id.textIP);
         buttonSend = (Button) findViewById(R.id.buttonSend);
         ((Button)findViewById(R.id.buttonLocal)).setOnClickListener(new View.OnClickListener() {
             @Override
@@ -103,6 +116,41 @@ public class MainActivity extends Activity {
 
             }
         });
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
+        BroadcastReceiver connReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction())) {
+                    ConnectivityManager manager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+                    NetworkInfo activeNetwork = manager.getActiveNetworkInfo();
+                    if (activeNetwork != null) {   // connected to the internet
+                        if (activeNetwork.isConnected()) {
+                            if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI) {
+                                // connected to wifi
+                            } else if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE) {
+                                // connected to the mobile provider's data plan
+                            }
+                        } else {
+                            Log.e(TAG, "当前没有网络连接，请确保你已经打开网络 ");
+                        }
+                        textIP.setText(getHostIP());
+
+                        Log.e(TAG, "info.getTypeName()" + activeNetwork.getTypeName());
+                        Log.e(TAG, "getSubtypeName()" + activeNetwork.getSubtypeName());
+                        Log.e(TAG, "getState()" + activeNetwork.getState());
+                        Log.e(TAG, "getDetailedState()" + activeNetwork.getDetailedState().name());
+                        Log.e(TAG, "getDetailedState()" + activeNetwork.getExtraInfo());
+                        Log.e(TAG, "getType()" + activeNetwork.getType());
+                    } else {   // not connected to the internet
+                        Log.e(TAG, "当前没有网络连接，请确保你已经打开网络 ");
+                    }
+                }
+            }
+        };
+        registerReceiver(connReceiver, filter);
     }
 
     public void onSend(View v) {
@@ -158,5 +206,30 @@ public class MainActivity extends Activity {
                 myHandler.sendEmptyMessage(TEST_RESPONSE);
             }
         }.start();
+    }
+
+    public static String getHostIP() {
+        String hostIp = "127.0.0.1";
+        try {
+            Enumeration nis = NetworkInterface.getNetworkInterfaces();
+            InetAddress ia = null;
+            while (nis.hasMoreElements()) {
+                NetworkInterface ni = (NetworkInterface) nis.nextElement();
+                Enumeration<InetAddress> ias = ni.getInetAddresses();
+                while (ias.hasMoreElements()) {
+                    ia = ias.nextElement();
+                    if (ia instanceof Inet6Address) continue;
+                    String ip = ia.getHostAddress();
+                    if (!hostIp.equals(ip)) {
+                        hostIp = ip;
+                        break;
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            Log.i("yao", "SocketException");
+            e.printStackTrace();
+        }
+        return hostIp;
     }
 }
