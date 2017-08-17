@@ -3,6 +3,7 @@
     <string-array name="server_values">
         <item>10.201.78.74:6002</item>
         <item>10.201.78.74:1002</item>
+        <item>96.0.44.23:443</item>
         <item>127.0.0.1:8888</item>
         <item>127.0.0.1:8889</item>
         <item>127.0.0.1:55555</item>
@@ -12,6 +13,7 @@
     <string-array name="server_names">
         <item>Hainan1</item>
         <item>Hainan2</item>
+        <item>gz</item>
         <item>Local1</item>
         <item>Local2</item>
         <item>Local3</item>

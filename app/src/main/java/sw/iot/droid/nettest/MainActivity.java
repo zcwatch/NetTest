@@ -28,6 +28,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -38,13 +39,20 @@ public class MainActivity extends Activity {
     private TextView textResult;
     private TextView textDebug;
     private Button buttonSend;
+    private Button buttonNTP;
     private String[] serverNames;
     private String[] serverValues;
     private TextView textIP;
+    private static long count_conn = 0;
+
+    private long time1;
+    private long time2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.i(TAG, "onCreate");
+
         setContentView(R.layout.activity_main);
         socketIP = (EditText) findViewById(R.id.editServer);
         socketPort = (EditText) findViewById(R.id.editPort);
@@ -64,6 +72,14 @@ public class MainActivity extends Activity {
             public void onClick(View view) {
                 socketIP.setText("10.201.78.74");
                 socketPort.setText("6002");
+            }
+        });
+
+        buttonNTP = (Button) findViewById(R.id.buttonNtp);
+        buttonNTP.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                doSyncNTP();
             }
         });
 
@@ -123,6 +139,7 @@ public class MainActivity extends Activity {
             @Override
             public void onReceive(Context context, Intent intent) {
                 if (ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction())) {
+                    count_conn++;
                     ConnectivityManager manager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
                     NetworkInfo activeNetwork = manager.getActiveNetworkInfo();
@@ -133,19 +150,18 @@ public class MainActivity extends Activity {
                             } else if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE) {
                                 // connected to the mobile provider's data plan
                             }
+                            Log.d(TAG, "@ZC " + count_conn + ":"
+                                    + " Type=" + activeNetwork.getTypeName() + "[" + activeNetwork.getType() + "]"
+                                    + " Subtype=" + activeNetwork.getSubtypeName() + " State=" + activeNetwork.getState());
+                            Log.d(TAG, " DetailedState=" + activeNetwork.getDetailedState().name()
+                                    + " Extra=" + activeNetwork.getExtraInfo());
                         } else {
-                            Log.e(TAG, "当前没有网络连接，请确保你已经打开网络 ");
+                            Log.e(TAG, "当前没有网络连接，请确保你已经打开网络");
                         }
                         textIP.setText(getHostIP());
-
-                        Log.e(TAG, "info.getTypeName()" + activeNetwork.getTypeName());
-                        Log.e(TAG, "getSubtypeName()" + activeNetwork.getSubtypeName());
-                        Log.e(TAG, "getState()" + activeNetwork.getState());
-                        Log.e(TAG, "getDetailedState()" + activeNetwork.getDetailedState().name());
-                        Log.e(TAG, "getDetailedState()" + activeNetwork.getExtraInfo());
-                        Log.e(TAG, "getType()" + activeNetwork.getType());
-                    } else {   // not connected to the internet
-                        Log.e(TAG, "当前没有网络连接，请确保你已经打开网络 ");
+                    } else {
+                        // not connected to the internet
+                        Log.e(TAG, "当前没有网络连接");
                     }
                 }
             }
@@ -154,6 +170,8 @@ public class MainActivity extends Activity {
     }
 
     public void onSend(View v) {
+        myHandler.sendEmptyMessage(TEST_REQUEST);
+
         textResult.setText("Connecting...");
         buttonSend.setEnabled(false);
         String ip = socketIP.getText().toString();
@@ -161,13 +179,19 @@ public class MainActivity extends Activity {
         doTest(ip, port);
     }
 
-    private final int TEST_RESPONSE = 1000;
+    private final int TEST_REQUEST = 1001;
+    private final int TEST_RESPONSE = 1002;
+
     String result;
     private Handler myHandler = new Handler() {
         public void handleMessage(Message msg) {
             switch (msg.what) {
+                case TEST_REQUEST:
+                    time1 = System.currentTimeMillis();
+                    break;
                 case TEST_RESPONSE:
-                    textResult.setText(result);
+                    time2 = System.currentTimeMillis();
+                    textResult.setText(result+"("+(time2-time1)+"ms)");
                     buttonSend.setEnabled(true);
                     break;
             }
@@ -227,9 +251,29 @@ public class MainActivity extends Activity {
                 }
             }
         } catch (SocketException e) {
-            Log.i("yao", "SocketException");
+            Log.i(TAG, "SocketException");
             e.printStackTrace();
         }
         return hostIp;
+    }
+
+    static int i = 0;
+    public void doSyncNTP() {
+        final String hosts[] = {"asia.pool.ntp.org", "ntp.api.bz", "0.asia.pool.ntp.org", "cn.pool.ntp.org", "2.android.pool.ntp.org"};
+        new Thread() {
+            @Override
+            public void run() {
+                if (i>=hosts.length) i=0;
+
+                final SntpClient client = new SntpClient();
+                if (client.requestTime(hosts[i], 45*1000)) {
+                    long now = client.getNtpTime() + System.nanoTime() / 1000 - client.getNtpTimeReference();
+                    Date current = new Date(now);
+                    Log.i(TAG, "Now is "+current.toString());
+                }
+
+                i++;
+            }
+        }.start();
     }
 }
